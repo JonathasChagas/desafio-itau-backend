@@ -11,15 +11,18 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.DoubleSummaryStatistics;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RestController
 @Validated
 @RequestMapping("/")
 public class TransactionController {
 
-    List<Transaction> transactionList = new LinkedList<>();
+    private final List<Transaction> transactionList = new LinkedList<>();
 
     @PostMapping("/transacao")
     public ResponseEntity<HttpStatus> createTransaction(@Valid @RequestBody TransactionDTO transactionDTO) {
@@ -33,14 +36,30 @@ public class TransactionController {
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(null);
         }
 
-        transactionList.add(TransactionMapper.TransactionDtoToTransaction(transactionDTO));
+        Transaction transaction = TransactionMapper.TransactionDtoToTransaction(transactionDTO);
+        System.out.println(transaction);
+        System.out.println(transactionDTO);
+        transactionList.add(transaction);
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 
     @DeleteMapping("/transacao")
     public ResponseEntity<HttpStatus> deleteAllTransactions() {
         transactionList.clear();
+        System.out.println("Deu CLEAR");
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
+    @GetMapping ("/estatistica")
+    public ResponseEntity<DoubleSummaryStatistics> showAllLast60SecondsTransactionStatitics() {
+        OffsetDateTime now = OffsetDateTime.now();
+
+        DoubleSummaryStatistics statistics = transactionList
+                .stream()
+                .map(TransactionMapper::TransactionToTransactionDto)
+                .filter(d -> TimeUnit.SECONDS.convert(Duration.between(d.getDataHora(), now)) <= TimeUnit.SECONDS.toSeconds(60))
+                .collect(Collectors.summarizingDouble(TransactionDTO::getValor));
+
+        return ResponseEntity.status(HttpStatus.OK).body(statistics);
+    }
 }
