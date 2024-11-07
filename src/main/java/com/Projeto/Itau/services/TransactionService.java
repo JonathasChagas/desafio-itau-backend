@@ -3,7 +3,7 @@ package com.Projeto.Itau.services;
 import com.Projeto.Itau.dto.TransactionDTO;
 import com.Projeto.Itau.entities.Transaction;
 import com.Projeto.Itau.mapper.TransactionMapper;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -13,44 +13,63 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 @Service
-public class TransactionService
-{
-    public static boolean isValueInvalid(float value) {
-        return value <= 0;
+public class TransactionService {
+
+    public void processTransaction(TransactionDTO transaction) {
+        validateTransaction(transaction);
     }
 
-    public static boolean isTransactionTimeNegative(OffsetDateTime startMoment) {
-        Duration duration = Duration.between(startMoment, OffsetDateTime.now());
-        return duration.isNegative();
+    public void isSecondsDefinedValid(int seconds) {
+        if (seconds <= 0) throw new IllegalArgumentException("Tempo em segundos deve ser maior do que 0");
     }
 
-    public static boolean isSecondsDefinedInvalid(int seconds) {
-        return seconds <= 0;
-    }
-
-    public static void deleteAllTransactions(List<Transaction> transactionList) {
+    public void deleteAllTransactions(List<Transaction> transactionList) {
+        log.info("Deletando todas as transações");
         transactionList.clear();
     }
 
-    public static DoubleSummaryStatistics getStatistics(List<Transaction> transactionList, OffsetDateTime start, int timeToConsiderTransactionStatistics) {
-        return transactionList
-                .stream()
-                .map(TransactionMapper::TransactionToTransactionDto)
-                .filter(d -> TimeUnit.SECONDS.convert(Duration.between(d.getDataHora(), start)) <= TimeUnit.SECONDS.toSeconds(timeToConsiderTransactionStatistics))
+    public DoubleSummaryStatistics getStatistics(List<Transaction> transactionList, OffsetDateTime start, int timeToConsiderTransactionStatistics) {
+        return transactionList.stream()
+                .map(TransactionMapper::transactionToTransactionDto)
+                .filter(transactionDto -> {
+                    long durationInSeconds = TimeUnit.SECONDS.convert(Duration.between(transactionDto.getDataHora(), start));
+                    return durationInSeconds <= TimeUnit.SECONDS.toSeconds(timeToConsiderTransactionStatistics);
+                })
                 .collect(Collectors.summarizingDouble(TransactionDTO::getValor));
     }
 
-    public static long calculateDurationInNanos(OffsetDateTime start) {
-        OffsetDateTime end = OffsetDateTime.now();
+    public long calculateDurationInNanos(OffsetDateTime start) {
+        log.info("Obtendo o tempo que leva para calculas as estatísticas");
+
+        var end = OffsetDateTime.now();
         return Duration.between(start, end).getSeconds();
     }
 
-    public static long logStatistics(DoubleSummaryStatistics statistics, long secondsTakenStatistics) {
+    public long logStatistics(DoubleSummaryStatistics statistics, long secondsTakenStatistics) {
+        log.info("Tempo levado para calculas as estatísticas: '{}'", secondsTakenStatistics);
+        log.info("Quantidade de transações calculadas: '{}'", statistics.getCount());
+
         return (statistics.getCount() > 0)
                 ? secondsTakenStatistics / statistics.getCount()
                 : 0;
+    }
+
+    private void validateTransaction(TransactionDTO transaction) {
+        validateTransactionValueOrThrowIllegalArgument(transaction.getValor());
+
+        validateTransactionTimeOrThrowIllegalArgument(transaction.getDataHora());
+    }
+
+    private void validateTransactionValueOrThrowIllegalArgument(float value) {
+        if (value < 0) throw new IllegalArgumentException("Valor deve ser maior ou igual a 0.");
+    }
+
+    private void validateTransactionTimeOrThrowIllegalArgument(OffsetDateTime startMoment) {
+        var duration = Duration.between(startMoment, OffsetDateTime.now());
+
+        if (duration.isNegative()) throw new IllegalArgumentException("Transação deve ocorrer em algum momento do passado.");
     }
 }
 

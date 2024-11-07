@@ -8,10 +8,10 @@
 		<version>3.3.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.Projeto</groupId>
-	<artifactId>Itau</artifactId>
+	<groupId>com.projeto</groupId>
+	<artifactId>itau</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Itau</name>
+	<name>itau</name>
 	<description>Projeto para o desafio backend Itaú</description>
 	<url/>
 	<licenses>

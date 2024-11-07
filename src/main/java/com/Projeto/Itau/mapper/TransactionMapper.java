@@ -5,13 +5,13 @@ import com.Projeto.Itau.entities.Transaction;
 import org.springframework.beans.BeanUtils;
 
 public abstract class TransactionMapper {
-    public static Transaction TransactionDtoToTransaction(TransactionDTO transactionDTO) {
+    public static Transaction transactionDtoToTransaction(TransactionDTO transactionDTO) {
         Transaction transaction = new Transaction();
         BeanUtils.copyProperties(transactionDTO, transaction);
         return transaction;
     }
 
-    public static TransactionDTO TransactionToTransactionDto(Transaction transaction) {
+    public static TransactionDTO transactionToTransactionDto(Transaction transaction) {
         TransactionDTO transactionDto = new TransactionDTO();
         BeanUtils.copyProperties(transaction, transactionDto);
         return transactionDto;

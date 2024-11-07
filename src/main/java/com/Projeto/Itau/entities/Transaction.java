@@ -1,11 +1,13 @@
 package com.Projeto.Itau.entities;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.OffsetDateTime;
 
-
-@Data
+@Getter
+@Setter
 public class Transaction {
-    private float valor;
+    private Float valor;
     private OffsetDateTime dataHora;
 }
